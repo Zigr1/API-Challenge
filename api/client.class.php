@@ -12,31 +12,55 @@ class Client
 	private $meassure;
 	private $convertTo;
 	private $method;
-	private $array = ['d' => 'days',
-					  'wd' => 'weekdays',
-					  'w' => 'complete weeks',
-					  's' => 'seconds',
-					  'i' => 'minutes',
-					  'h' => 'hours',
-					  'y' => 'years',
-					  '-' => 'none'
-					];
+	// allowed meassure values
+	private  const ARRAY_OF_MEASSURES = ['d' => 'days',
+						 'wd' => 'weekdays',
+						 'w' => 'complete weeks',
+						];
+	// allowed convertTo values
+	private  const ARRAY_OF_CONVERT_TO = ['s' => 'seconds',
+						  'i' => 'minutes',
+						  'h' => 'hours',
+						  'y' => 'years',
+						  '-' => 'none'
+						 ];
 
 	//Methods
 	function __construct($dateTimeStart = '',
-						 $timeZoneStart ='',
-						 $dateTimeEnd = '',
-						 $timeZoneEnd ='',
-						 $meassure = '',
-						 $convertTo = '')
+				 $timeZoneStart ='',
+				 $dateTimeEnd = '',
+				 $timeZoneEnd ='',
+				 $meassure = '',
+				 $convertTo = '')
 	{
 		# Construct the class and set the values in the attributes.
 		$this->timeZoneStart = new DateTimeZone($timeZoneStart);
 		$this->dateTimeStart = new DateTime($dateTimeStart, $this->timeZoneStart);
 		$this->timeZoneEnd = new DateTimeZone($timeZoneEnd);
 		$this->dateTimeEnd = new DateTime($dateTimeEnd, $this->timeZoneEnd);
-		$this->meassure = $meassure;
-		$this->convertTo = (is_null($convertTo) || $convertTo === '' ? '-' : $convertTo);
+
+		// starting DateTime should go before ending DateTime
+		if ($this->dateTimeEnd->setTimezone($this->timeZoneStart) < $this->dateTimeStart) {
+			$this->timeZoneStart = new DateTimeZone($timeZoneEnd);
+			$this->dateTimeStart = new DateTime($dateTimeEnd, $this->timeZoneEnd);
+			$this->timeZoneEnd = new DateTimeZone($timeZoneStart);
+			$this->dateTimeEnd = new DateTime($dateTimeStart, $this->timeZoneStart);
+		}
+
+		// check if meassure value is valid
+		if (array_key_exists($meassure, self::ARRAY_OF_MEASSURES)) {
+			$this->meassure = $meassure;
+		} else {
+			throw new Exception('Invalid meassure type.');
+		}
+		// if convertTo param is null, change its value to '-' for 'no convertion'
+		$convertToNotEmpty = (is_null($convertTo) || $convertTo === '' ? '-' : $convertTo);
+		// check if convertTo value is valid
+		if (array_key_exists($convertToNotEmpty, self::ARRAY_OF_CONVERT_TO)) {
+			$this->convertTo = $convertToNotEmpty;
+		} else {
+			throw new Exception('Invalid convertion type.');
+		}
 
 	}
 
@@ -55,26 +79,20 @@ class Client
 				$result = self::calculateCompleteWeeksBetween($this->dateTimeStart, $this->dateTimeEnd);
 				$resultInDays = $result * 7;
 				break;
-			default:
-				// set response code - 422 Wrong inputd
-			    http_response_code(422);
-
-			    // tell the user no products found
-			    return array('status' => 422, 'message' => 'Calculation meassure not recognized.');
 		}
 
 		$convertedResult = self::convertResult($result, $resultInDays, $this->convertTo);
 
 		// set response code - 200 Success
-    	http_response_code(200);
+    		http_response_code(200);
 
 		return 	array('staring date' => $this->dateTimeStart->format('Y-m-d H-i-s'),
-					 'starting date timezone' => $this->timeZoneStart,
-					 'end date' => $this->dateTimeEnd->format('Y-m-d H-i-s'),
-					 'end date timezone' => $this->timeZoneEnd,
-					 'difference between dates' => $convertedResult,
-					 'difference in' => $this->array[$this->meassure],
-					 'difference converted to' => $this->array[$this->convertTo]);
+				 'starting date timezone' => $this->timeZoneStart,
+				 'end date' => $this->dateTimeEnd->format('Y-m-d H-i-s'),
+				 'end date timezone' => $this->timeZoneEnd,
+				 'difference between dates' => $convertedResult,
+				 'difference in' => self::ARRAY_OF_MEASSURES[$this->meassure],
+				 'difference converted to' => self::ARRAY_OF_CONVERT_TO[$this->convertTo]);
 
 	}
 
