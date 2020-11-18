@@ -69,14 +69,17 @@ class Client
 		switch ($this->meassure) {
 			case 'd':
 				$result = self::calculateDaysBetween($this->dateTimeStart, $this->dateTimeEnd);
+				// calculate result in days for valid convertion
 				$resultInDays = $result;
 				break;
 			case 'wd':
 				$result = self::calculateWeekdaysBetween($this->dateTimeStart, $this->dateTimeEnd);
+				// calculate result in days for valid convertion
 				$resultInDays = $result;
 				break;
 			case 'w':
 				$result = self::calculateCompleteWeeksBetween($this->dateTimeStart, $this->dateTimeEnd);
+				// calculate result in days for valid convertion
 				$resultInDays = $result * 7;
 				break;
 		}
@@ -97,43 +100,63 @@ class Client
 	}
 
 	// 1. count number of days between two dates
-	function calculateDaysBetween(DateTime $date1, DateTime $date2) {
-		return $date1->diff($date2)->format('%a');
+	function calculateDaysBetween() {
+		return $this->dateTimeStart->diff($this->dateTimeEnd)->format('%a');
 
 	}
 
-	// 2. count number of weekdays between two dates
-	function calculateWeekdaysBetween(DateTime $date1, DateTime $date2) {
+	// 2. count number of weekdays between two dates as follows:
+	// number of weekdays after day start till first weekend +
+	// number of full weeks (Mon - Sun) after week of day start and before week of day end multiply by 5 +
+	// number of weekdays from last Mon and before day end
+	function calculateWeekdaysBetween() {
+
+		// 2.0 convert both dates to one time zone
+		$date1 = $this->dateTimeStart;
+		$date2 = $this->dateTimeEnd->setTimezone($this->timeZoneStart);
 
 		// 2.1 count number of weekdays from start of week to start date
 		$dayStart = $date1->format('w');
 		// transfer Sunday to the end of week
-        if ($dayStart == 0)
-            $dayStart = 7;
-        // weekdays from start of the week before start date
-        $wdayStart = $dayStart > 5 ? 5 : $dayStart;
+		if ($dayStart == 0)
+		    $dayStart = 7;
+		// weekdays from start of the week before start date
+		$wdayStart = $dayStart > 5 ? 5 : $dayStart;
 
-        // 2.2 count number of weekdays from start of week to end date
-        $dayEnd = $date2->format('w');
-        // transfer Sunday to the end of week
-        if ($dayEnd == 0)
-            $dayEnd = 7;
-        // weekdays from start of the week before end date
-        $wdayEnd = $dayEnd > 5 ? 5 : ($dayEnd - 1);
+		//2.2 find first Monday after start date
+		$dd = 8 - $dayStart;
+		$dateOfMondayAfterDayStart = $date1->setTime(0, 0, 0)->modify('+'.$dd.' day');
 
-        // 2.3 count number of full weeks between the two dates
-        $weeksBetween = self::calculateCompleteWeeksBetween($date1, $date2);
+		// 2.3 count number of weekdays from start of week to end date
+		$dayEnd = $date2->format('w');
+		// transfer Sunday to the end of week
+		if ($dayEnd == 0)
+		    $dayEnd = 7;
+		// weekdays from start of the week before end date
+		$wdayEnd = $dayEnd > 5 ? 5 : ($dayEnd - 1);
 
-        // 2.4 count number of weekdays between two dates as sum of previous results
-        $weekdaysBetween = 5 * ($weeksBetween - 1) + (5 - $wdayStart) + $wdayEnd;
 
-        return $weekdaysBetween;
+		//2.4 find first Monday before end date
+		$dd = $dayEnd - 1;
+		$dateOfMondayBeforeDayEnd = $date2->setTime(0, 0, 0)->modify('-'.$dd.' day');
+
+		// 2.5 count number of full weeks between the two Mondays at 2.2 and 2.4
+		if ($dateOfMondayBeforeDayEnd > $dateOfMondayAfterDayStart) {
+			$weeksBetween = self::calculateCompleteWeeksBetween($dateOfMondayAfterDayStart, $dateOfMondayBeforeDayEnd);
+		} else {
+			$weeksBetween = 0;
+			}
+
+		// 2.6 count number of weekdays between two dates as sum of previous results
+		$weekdaysBetween = 5 * ($weeksBetween) + (5 - $wdayStart) + $wdayEnd;
+
+		return $weekdaysBetween;
 
 	}
 
 	// 3. count number of complete weeks between two dates
-	function calculateCompleteWeeksBetween(DateTime $date1, DateTime $date2) {
-		$daysBetween = self::calculateDaysBetween($date1, $date2);
+	function calculateCompleteWeeksBetween() {
+		$daysBetween = self::calculateDaysBetween($this->dateTimeStart, $this->dateTimeEnd);
 		return floor($daysBetween / 7);
 
 	}
