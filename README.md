@@ -9,7 +9,7 @@ You can use the API either from:
 ![API frontend](https://github.com/Zigr1/API-Challenge/blob/main/img/api1.png?raw=true)
 2.	Or using the Postman to test HTTP requests and read responses. It can be downloaded there: https://www.postman.com/downloads/. You can use POST or GET method of sending request. Others are not allowed. 
 ![API in POSTMAN](https://github.com/Zigr1/API-Challenge/blob/main/img/api2.png?raw=true)
-### The request should look like this: http://localhost/API-Challenge/api/client? 
+### The request should look like this: http://localhost/API-Challenge/api/index.php? 
 (or ../API-Challenge-main/.. if you left the branch name)
 ### There are 6 request parameters:
 1.	dateTimeStart: Starting date and time
@@ -19,6 +19,12 @@ You can use the API either from:
 5.	measure: Interval measurement (‘d’ for days, ‘wd’ for weekdays, or ‘w’ for complete weeks)
 6.	convertTo: One of ‘s’, ’i’, ’h’, or ‘y’ to convert result to seconds, minutes, hours or years respectively (null or ‘-‘ for no convertion).
 Response returned is a JSON object.
+
+### You can also run request as http://localhost/API-Challenge/api/[any_custom_route]?[parameters] if you add this lines to the .htaccess file of the project:
+RewriteEngine On
+
+RewriteRule ^ index.php [QSA,L]
+
 ### API itself consists of two files in ‘api’ folder:
 1.	index.php – api access point. It gets parameters from the request, handle input, initialize a new object of a Client class, returns response as a JSON object.
 2.	client.class.php – api client that implements the core functionality as a class with properties and methods.
