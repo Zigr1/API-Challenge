@@ -31,7 +31,7 @@
 		<div id="container">
 			<h2>Simple frontend for the assignment API</h2>
 			<!-- Simple form to test API -->
-			<form method="GET" action="api/assignment">
+			<form method="GET" action="api/index.php">
 				<div>
 					<label for="dateTimeStart">DateTime from:</label>
 					<input name="dateTimeStart" id="dateTimeStart" class="form-control" />
